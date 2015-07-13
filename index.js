@@ -43,7 +43,7 @@ csumtype:1 (csum:4){0,1} arg1~2 arg2~2 arg3~2
 */
 
 var b = new Buffer([
-    0x00, 0x34,             // size 52 - Big Endian
+    0x00, 0x7D,             // size 125 - Big Endian
     0x03,                   // type 3 (call request)
     0x00,                   // reserved
     0xFF, 0xFF, 0xFF, 0xFE, // id (max non-reserved value)
@@ -78,8 +78,8 @@ var b = new Buffer([
     0x04, 0x61, 0x75, 0x74, 0x68,
     0x05, 0x6D, 0x6F, 0x6F, 0x73, 0x65,
 
-    // Checksum (type 0 no checksum)
-    0x00,
+    // Checksum
+    0x01, 0xFF, 0xFF, 0xFF, 0xFF,
 
     // arg1: length 1
     0x00, 0x01, 0xFF,
