@@ -43,7 +43,7 @@ function fillBuffers(rawFrame, buffer) {
         return rawFrame;
     }
 
-    var args = body.ags = [];
+    var args = body.agrs = [];
 
     var arg1len = body.arg1len;
     var arg2len = body.arg2len;
