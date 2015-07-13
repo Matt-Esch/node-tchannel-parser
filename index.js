@@ -51,21 +51,21 @@ function fillBuffers(rawFrame, buffer) {
 
     argpos += 2;
 
-    if (!arg1len) {
+    if (arg1len === undefined) {
         return rawFrame;
     }
 
     args.push(buffer.slice(argpos, argpos + arg1len));
     argpos += arg1len + 2;
 
-    if (!arg2len) {
+    if (arg2len === undefined) {
         return rawFrame;
     }
 
     args.push(buffer.slice(argpos, argpos + arg2len));
     argpos += arg2len + 2;
 
-    if (!arg3len) {
+    if (arg3len === undefined) {
         return rawFrame;
     }
 
