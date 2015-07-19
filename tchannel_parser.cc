@@ -246,7 +246,6 @@ static inline void readTChannelCallReq(
 
     // Return values
     Local<Number> js_size;
-    Local<Number> js_type;
     Local<Number> js_id;
     Local<Number> js_flags;
     Local<Number> js_ttl;
