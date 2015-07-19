@@ -4,6 +4,15 @@ var tchannel = require('bindings')('tchannel_parser');
 
 var Buffer = require('buffer').Buffer;
 
+var tcBuffer = null;
+var tcError = false;
+var tcValue = null;
+
+tchannel.setup(
+    handleTChannelParserError,
+    handleTChannelReqFrame
+);
+
 module.exports = parseFrame;
 
 function parseFrame(buffer) {
@@ -11,70 +20,107 @@ function parseFrame(buffer) {
         return null;
     }
 
-    // The frame has to be at least 16 bits
-    if (buffer.length < 16) {
-        return null;
+    tcBuffer = buffer;
+    tchannel.parse(buffer);
+
+    var result;
+
+    if (tcError) {
+        result = null;
+    } else {
+        result = tcValue;
     }
 
-    return fillBuffers(tchannel.parse(buffer), buffer);
+    tcBuffer = null;
+    tcError = false;
+    tcValue = null;
+    return result;
 }
 
-function fillBuffers(rawFrame, buffer) {
-    if (!rawFrame ||
-        rawFrame.type !== 3 ||
-        !rawFrame.body ||
-        buffer.length < 46
-    ) {
-        return rawFrame;
+function handleTChannelParserError() {
+    tcError = true;
+}
+
+function handleTChannelReqFrame(
+    size, id, flags, ttl, traceflags, headers, service, csumtype,
+    csumval, arg1start, arg1end, arg2start, arg2end, arg3start,
+    arg3end
+) {
+    tcValue = new TChannelRequestFrame(
+        tcBuffer, size, id, flags, ttl, traceflags, headers,
+        service, csumtype, csumval, arg1start, arg1end,
+        arg2start, arg2end, arg3start, arg3end
+    );
+}
+
+function TChannelRequestFrame(
+    buffer, size, id, flags, ttl, traceflags, headers, service,
+    csumtype, csumval, arg1start, arg1end, arg2start, arg2end,
+    arg3start, arg3end
+) {
+    this.size = size;
+    this.type = 0x03;
+    this.id = id;
+    this.body = new TChannelCallRequestBody(
+        buffer,
+        flags,
+        ttl,
+        traceflags,
+        headers,
+        service,
+        csumtype,
+        csumval,
+        arg1start,
+        arg1end,
+        arg2start,
+        arg2end,
+        arg3start,
+        arg3end
+    );
+}
+
+function TChannelCallRequestBody(
+    buffer,
+    flags,
+    ttl,
+    traceflags,
+    headers,
+    service,
+    csumtype,
+    csumval,
+    arg1start,
+    arg1end,
+    arg2start,
+    arg2end,
+    arg3start,
+    arg3end
+) {
+    this.type = 0x03;
+    this.flags = flags;
+    this.tracing = new TChannelTracing(buffer, traceflags);
+    this.service = service;
+    this.headers = new TChannelHeaders(headers);
+    this.csum = new TChannelChecksum(csumtype, csumval);
+    this.args = [
+        buffer.slice(arg1start, arg1end),
+        buffer.slice(arg2start, arg2end),
+        buffer.slice(arg3start, arg3end)
+    ];
+}
+
+function TChannelTracing(buffer, traceflags) {
+    this.spanid = buffer.slice(21, 29);
+    this.parentid = buffer.slice(29, 37);
+    this.traceid = buffer.slice(37, 45);
+    this.flags = traceflags;
+}
+
+function TChannelHeaders(headers) {
+    for (var i = 0; i < headers.length; i += 2) {
+        this[headers[i]] = headers[i + 1];
     }
-
-    var body = rawFrame.body;
-    var tracing = rawFrame.body.tracing;
-
-    if (tracing) {
-        tracing.spanid = buffer.slice(21, 29);
-        tracing.parentid = buffer.slice(29, 37);
-        tracing.traceid = buffer.slice(37, 45);
-    }
-
-    var argpos = body.argstart;
-
-    if (!argpos) {
-        return rawFrame;
-    }
-
-    var args = body.agrs = [];
-
-    var arg1len = body.arg1len;
-    var arg2len = body.arg2len;
-    var arg3len = body.arg3len;
-
-    argpos += 2;
-
-    if (arg1len === undefined) {
-        return rawFrame;
-    }
-
-    args.push(buffer.slice(argpos, argpos + arg1len));
-    argpos += arg1len + 2;
-
-    if (arg2len === undefined) {
-        return rawFrame;
-    }
-
-    args.push(buffer.slice(argpos, argpos + arg2len));
-    argpos += arg2len + 2;
-
-    if (arg3len === undefined) {
-        return rawFrame;
-    }
-
-    args.push(buffer.slice(argpos, argpos + arg3len));
-
-    delete body.argstart;
-    delete body.arg1len;
-    delete body.arg2len;
-    delete body.arg3len;
-
-    return rawFrame;
+}
+function TChannelChecksum(csumtype, csumval) {
+    this.type = csumtype;
+    this.val = csumval;
 }
