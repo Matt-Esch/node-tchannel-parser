@@ -1,6 +1,6 @@
 {
   "name": "tchannel-parser",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Native module for parsing tchannel frames",
   "main": "index.js",
   "scripts": {
