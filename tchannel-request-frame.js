@@ -24,6 +24,7 @@ function TChannelCallRequestBody(
 ) {
     this.type = 0x03;
     this.flags = flags;
+    this.ttl = ttl;
     this.tracing = new TChannelRequestTracing(buffer, traceflags);
     this.service = service;
     this.headers = new TChannelRequestHeaders(headers);
