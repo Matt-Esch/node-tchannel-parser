@@ -1,5 +1,8 @@
 'use strict';
 
+var Buffer = require('buffer').Buffer;
+var EMPTY_BUFFER = Buffer(0);
+
 module.exports = TChannelResponseFrame;
 
 function TChannelResponseFrame(
@@ -27,11 +30,9 @@ function TChannelCallResponseBody(
     this.tracing = new TChannelResponseTracing(buffer, traceflags);
     this.headers = new TChannelResponseHeaders(headers);
     this.csum = new TChannelResponseChecksum(csumtype, csumval);
-    this.args = [
-        buffer.slice(arg1start, arg1end),
-        buffer.slice(arg2start, arg2end),
-        buffer.slice(arg3start, arg3end)
-    ];
+    this.args = createArgs(
+        buffer, arg1start, arg1end, arg2start, arg2end, arg3start, arg3end
+    );
 }
 
 function TChannelResponseTracing(buffer, traceflags) {
@@ -49,4 +50,36 @@ function TChannelResponseHeaders(headers) {
 function TChannelResponseChecksum(csumtype, csumval) {
     this.type = csumtype;
     this.val = csumval;
+}
+
+function createArgs(
+    buffer, arg1start, arg1end, arg2start, arg2end, arg3start, arg3end
+) {
+    var args = [];
+
+    if (arg1start !== 0) {
+        pushArg(args, buffer, arg1start, arg1end);
+    } else {
+        return args;
+    }
+
+    if (arg2start !== 0) {
+        pushArg(args, buffer, arg2start, arg2end);
+    } else {
+        return args;
+    }
+
+    if (arg3start !== 0) {
+        pushArg(args, buffer, arg3start, arg3end);
+    }
+
+    return args;
+}
+
+function pushArg(args, buffer, start, end) {
+    if (start === end) {
+        args.push(EMPTY_BUFFER);
+    } else {
+        args.push(buffer.slice(start, end));
+    }
 }

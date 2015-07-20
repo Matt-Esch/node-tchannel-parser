@@ -4,20 +4,17 @@ using namespace v8;
 
 namespace tchannel {
 
-struct BufferResult
-{
+struct BufferResult {
     char* buffer;
     uint32_t length;
 };
 
-struct BufferRange
-{
+struct BufferRange {
     size_t start;
     size_t end;
 };
 
-class BufferReader
-{
+class BufferReader {
 public:
     BufferReader();
     BufferReader(char* buffer, size_t length);
@@ -39,29 +36,25 @@ private:
     size_t length;
 };
 
-BufferReader::BufferReader()
-{
+BufferReader::BufferReader() {
     this->error = false;
     this->offset = (size_t)0;
     this->buffer = (char*)0;
     this->length = (size_t)0;
 }
 
-BufferReader::BufferReader(char* buffer, size_t length)
-{
+BufferReader::BufferReader(char* buffer, size_t length) {
     this->error = false;
     this->offset = 0;
     this->buffer = buffer;
     this->length = length;
 }
 
-bool BufferReader::Error()
-{
+bool BufferReader::Error() {
     return this->error;
 }
 
-uint8_t BufferReader::ReadUint8()
-{
+uint8_t BufferReader::ReadUint8() {
     if (this->error || !this->CheckRead(1))
     {
         this->error = true;
@@ -75,8 +68,7 @@ uint8_t BufferReader::ReadUint8()
     return result;
 }
 
-uint16_t BufferReader::ReadUint16BE()
-{
+uint16_t BufferReader::ReadUint16BE() {
     if (this->error || !this->CheckRead(2))
     {
         this->error = true;
@@ -93,10 +85,8 @@ uint16_t BufferReader::ReadUint16BE()
     return result;
 }
 
-uint32_t BufferReader::ReadUint32BE()
-{
-    if (this->error || !this->CheckRead(4))
-    {
+uint32_t BufferReader::ReadUint32BE() {
+    if (this->error || !this->CheckRead(4)) {
         this->error = true;
         return 0;
     }
@@ -114,8 +104,7 @@ uint32_t BufferReader::ReadUint32BE()
 }
 
 void BufferReader::Skip(size_t count) {
-    if (this->error || !this->CheckRead(count))
-    {
+    if (this->error || !this->CheckRead(count)) {
         this->error = true;
         return;
     }
@@ -123,17 +112,14 @@ void BufferReader::Skip(size_t count) {
     this->offset += count;
 }
 
-void BufferReader::ReadUint8Buffer(struct BufferResult &result)
-{
-    if (this->error)
-    {
+void BufferReader::ReadUint8Buffer(struct BufferResult &result) {
+    if (this->error) {
         return;
     }
 
     size_t bufferLength = (size_t)this->ReadUint8();
 
-    if (this->error || !this->CheckRead(bufferLength))
-    {
+    if (this->error || !this->CheckRead(bufferLength)) {
         this->error = true;
         return;
     }
@@ -148,17 +134,14 @@ void BufferReader::ReadUint8Buffer(struct BufferResult &result)
     }
 }
 
-void BufferReader::ReadUint16BERange(struct BufferRange &range)
-{
-    if (this->error)
-    {
+void BufferReader::ReadUint16BERange(struct BufferRange &range) {
+    if (this->error) {
         return;
     }
 
     size_t bufferLength = (size_t)this->ReadUint16BE();
 
-    if (this->error || !CheckRead(bufferLength))
-    {
+    if (this->error || !CheckRead(bufferLength)) {
         this->error = true;
         return;
     }
@@ -168,13 +151,11 @@ void BufferReader::ReadUint16BERange(struct BufferRange &range)
     this->offset += bufferLength;
 }
 
-bool BufferReader::CheckRead(size_t read)
-{
+bool BufferReader::CheckRead(size_t read) {
     return this->offset + read <= this->length;
 }
 
-enum FrameType
-{
+enum FrameType {
     // First message on every connection must be init
     TC_INIT_REQ_TYPE=0x01,
 
@@ -228,6 +209,7 @@ inline uint32_t readFrameId(char* buffer) {
 
 }
 
+static Persistent<Number> js_zero;
 static Persistent<Function> js_return_error;
 static Persistent<Function> js_return_call_req;
 static Persistent<Function> js_return_call_res;
@@ -236,10 +218,7 @@ static void HandleError(Local<Object> global) {
     js_return_error->Call(global, 0, NULL);
 }
 
-static inline void readTChannelCallReq(
-    char* buffer,
-    size_t length
-) {
+static inline void readTChannelCallReq(char* buffer, size_t length) {
     tchannel::BufferReader reader(buffer, length);
     struct tchannel::BufferResult bufferResult;
     struct tchannel::BufferRange bufferRange;
@@ -338,23 +317,35 @@ static inline void readTChannelCallReq(
 
     js_csumval = NanNew<Uint32>(csumval);
 
-    // arg1~1
+    // arg1~2
     reader.ReadUint16BERange(bufferRange);
-    if (reader.Error()) return HandleError(js_global);
-    js_arg1start = NanNew<Uint32>((uint32_t)bufferRange.start);
-    js_arg1end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    if (reader.Error()) {
+        js_arg1start = js_zero;
+        js_arg1end = js_zero;
+    } else {
+        js_arg1start = NanNew<Uint32>((uint32_t)bufferRange.start);
+        js_arg1end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    }
 
     // arg2~2
     reader.ReadUint16BERange(bufferRange);
-    if (reader.Error()) return HandleError(js_global);
-    js_arg2start = NanNew<Uint32>((uint32_t)bufferRange.start);
-    js_arg2end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    if (reader.Error()) {
+        js_arg2start = js_zero;
+        js_arg2end = js_zero;
+    } else {
+        js_arg2start = NanNew<Uint32>((uint32_t)bufferRange.start);
+        js_arg2end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    }
 
     // arg3~2
     reader.ReadUint16BERange(bufferRange);
-    if (reader.Error()) return HandleError(js_global);
-    js_arg3start = NanNew<Uint32>((uint32_t)bufferRange.start);
-    js_arg3end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    if (reader.Error()) {
+        js_arg3start = js_zero;
+        js_arg3end = js_zero;
+    } else {
+        js_arg3start = NanNew<Uint32>((uint32_t)bufferRange.start);
+        js_arg3end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    }
 
     Local<Value> js_callreq[15] = {
         js_size,
@@ -377,10 +368,7 @@ static inline void readTChannelCallReq(
     js_return_call_req->Call(js_global, 15, js_callreq);
 }
 
-static inline void readTChannelCallRes(
-    char* buffer,
-    size_t length
-) {
+static inline void readTChannelCallRes(char* buffer, size_t length) {
     tchannel::BufferReader reader(buffer, length);
     struct tchannel::BufferResult bufferResult;
     struct tchannel::BufferRange bufferRange;
@@ -473,23 +461,35 @@ static inline void readTChannelCallRes(
 
     js_csumval = NanNew<Uint32>(csumval);
 
-    // arg1~1
+    // arg1~2
     reader.ReadUint16BERange(bufferRange);
-    if (reader.Error()) return HandleError(js_global);
-    js_arg1start = NanNew<Uint32>((uint32_t)bufferRange.start);
-    js_arg1end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    if (reader.Error()) {
+        js_arg1start = js_zero;
+        js_arg1end = js_zero;
+    } else {
+        js_arg1start = NanNew<Uint32>((uint32_t)bufferRange.start);
+        js_arg1end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    }
 
     // arg2~2
     reader.ReadUint16BERange(bufferRange);
-    if (reader.Error()) return HandleError(js_global);
-    js_arg2start = NanNew<Uint32>((uint32_t)bufferRange.start);
-    js_arg2end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    if (reader.Error()) {
+        js_arg2start = js_zero;
+        js_arg2end = js_zero;
+    } else {
+        js_arg2start = NanNew<Uint32>((uint32_t)bufferRange.start);
+        js_arg2end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    }
 
     // arg3~2
     reader.ReadUint16BERange(bufferRange);
-    if (reader.Error()) return HandleError(js_global);
-    js_arg3start = NanNew<Uint32>((uint32_t)bufferRange.start);
-    js_arg3end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    if (reader.Error()) {
+        js_arg3start = js_zero;
+        js_arg3end = js_zero;
+    } else {
+        js_arg3start = NanNew<Uint32>((uint32_t)bufferRange.start);
+        js_arg3end = NanNew<Uint32>((uint32_t)bufferRange.end);
+    }
 
     Local<Value> js_callres[14] = {
         js_size,
@@ -575,6 +575,8 @@ void Init(Handle<Object> exports) {
         NanNew("setup"),
         NanNew<FunctionTemplate>(Setup)->GetFunction()
     );
+
+    NanAssignPersistent(js_zero, NanNew<Number>(0));
 }
 
 NODE_MODULE(tchannel_parser, Init);
