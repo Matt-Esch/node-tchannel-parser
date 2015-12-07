@@ -320,8 +320,8 @@ static inline void readTChannelCallReq(char* buffer, size_t length) {
     // arg1~2
     reader.ReadUint16BERange(bufferRange);
     if (reader.Error()) {
-        js_arg1start = js_zero;
-        js_arg1end = js_zero;
+        js_arg1start = NanNew(js_zero);
+        js_arg1end = NanNew(js_zero);
     } else {
         js_arg1start = NanNew<Uint32>((uint32_t)bufferRange.start);
         js_arg1end = NanNew<Uint32>((uint32_t)bufferRange.end);
@@ -330,8 +330,8 @@ static inline void readTChannelCallReq(char* buffer, size_t length) {
     // arg2~2
     reader.ReadUint16BERange(bufferRange);
     if (reader.Error()) {
-        js_arg2start = js_zero;
-        js_arg2end = js_zero;
+        js_arg2start = NanNew(js_zero);
+        js_arg2end = NanNew(js_zero);
     } else {
         js_arg2start = NanNew<Uint32>((uint32_t)bufferRange.start);
         js_arg2end = NanNew<Uint32>((uint32_t)bufferRange.end);
@@ -340,8 +340,8 @@ static inline void readTChannelCallReq(char* buffer, size_t length) {
     // arg3~2
     reader.ReadUint16BERange(bufferRange);
     if (reader.Error()) {
-        js_arg3start = js_zero;
-        js_arg3end = js_zero;
+        js_arg3start = NanNew(js_zero);
+        js_arg3end = NanNew(js_zero);
     } else {
         js_arg3start = NanNew<Uint32>((uint32_t)bufferRange.start);
         js_arg3end = NanNew<Uint32>((uint32_t)bufferRange.end);
@@ -464,8 +464,8 @@ static inline void readTChannelCallRes(char* buffer, size_t length) {
     // arg1~2
     reader.ReadUint16BERange(bufferRange);
     if (reader.Error()) {
-        js_arg1start = js_zero;
-        js_arg1end = js_zero;
+        js_arg1start = NanNew(js_zero);
+        js_arg1end = NanNew(js_zero);
     } else {
         js_arg1start = NanNew<Uint32>((uint32_t)bufferRange.start);
         js_arg1end = NanNew<Uint32>((uint32_t)bufferRange.end);
@@ -474,8 +474,8 @@ static inline void readTChannelCallRes(char* buffer, size_t length) {
     // arg2~2
     reader.ReadUint16BERange(bufferRange);
     if (reader.Error()) {
-        js_arg2start = js_zero;
-        js_arg2end = js_zero;
+        js_arg2start = NanNew(js_zero);
+        js_arg2end = NanNew(js_zero);
     } else {
         js_arg2start = NanNew<Uint32>((uint32_t)bufferRange.start);
         js_arg2end = NanNew<Uint32>((uint32_t)bufferRange.end);
@@ -484,8 +484,8 @@ static inline void readTChannelCallRes(char* buffer, size_t length) {
     // arg3~2
     reader.ReadUint16BERange(bufferRange);
     if (reader.Error()) {
-        js_arg3start = js_zero;
-        js_arg3end = js_zero;
+        js_arg3start = NanNew(js_zero);
+        js_arg3end = NanNew(js_zero);
     } else {
         js_arg3start = NanNew<Uint32>((uint32_t)bufferRange.start);
         js_arg3end = NanNew<Uint32>((uint32_t)bufferRange.end);
